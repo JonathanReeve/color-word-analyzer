@@ -5,7 +5,7 @@ version:             0.1.0.0
 synopsis:            Finds color words in text, and produces charts.
 -- description:
 -- bug-reports:
-license:             GNU General Public License v3.0 or later
+-- license:             GNU General Public License v3.0 or later
  
 license-file:        LICENSE.md
 author:              Jonathan Reeve
@@ -14,14 +14,18 @@ copyright:           (c) 2020 Jonathan Reeve
 category:            Text
 stability:           experimental
 homepage:            https://github.com/JonathanReeve/color-word-analyzer 
-
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
 data-dir:            data/
 
-executable annotate-color
-  main-is:           src/Main.hs
-  -- other-modules:
+executable color-word-analyzer
+  main-is:           Main.hs
+  other-modules:     AnnotateColors
+                   , CategorizeColor
+                   , ColorMaps
+                   , FindColors
+                   , PlotColors
+                   , Types
   -- other-extensions:
   build-depends:       base
                      , lucid
@@ -45,5 +49,5 @@ executable annotate-color
                      , scotty
                      , wai-extra
                      , wai-middleware-static
-  -- hs-source-dirs:
+  hs-source-dirs:      src/
   default-language:    Haskell2010
