@@ -25,11 +25,11 @@ parseTSV tsv = sortBy (flip (compare `on` T.length . fst)) unsorted
     mapTuple f (a1, a2) = (f a1, f a2)
 
 xkcd = ColorMap { name = "XKCD"
-                , assoc = parseTSV <$> TIO.readFile "../data/maps/xkcd/rgb.txt"
+                , assoc = parseTSV <$> TIO.readFile "../data/xkcd.tsv"
                 }
 
 ridgway = ColorMap { name = "Ridgway"
-                   , assoc = parseTSV <$> TIO.readFile "../data/maps/jaffer/ridgway.tsv"
+                   , assoc = parseTSV <$> TIO.readFile "../data/ridgway.tsv"
                    }
 
 -- | Take a color map containing things like ("nile blue", "#4E5180")
