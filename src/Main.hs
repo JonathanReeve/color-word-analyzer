@@ -31,6 +31,7 @@ import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Char8 as BS
 
 import Graphics.Plotly.Lucid (plotlyCDN)
+import Graphics.Plotly
 
 -- import Main
 
@@ -125,6 +126,27 @@ doAnalysis inFile label colorMap colorMapLabel = do
   let onlyMatches = catMaybes zipData
   let stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
   mkHtml colorMapMap [stats] parsed (T.length inFile)
+
+-- | Only make the first chart, and don't scaffold
+mkTraces :: T.Text ->
+             -- ^ Input file
+             String ->
+             -- ^ Input file label
+             [(Types.ColorWord, Types.Hex)] ->
+             -- ^ Color mapping
+             T.Text ->
+             -- ^ Color mapping label
+             [Trace]
+             -- ^ Resulting HTML
+mkTraces inFile label colorMap colorMapLabel = do
+  let colorMapMap = M.fromList colorMap
+  let parsed = findReplace (colorParser colorMap) inFile
+  let zipData = map getZipData (zip (getLocations parsed) parsed)
+  let onlyMatches = catMaybes zipData
+  let stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
+  mkHBarTraces [stats] -- ++ (mkHBarParentTraces colorMapMap [stats])
+  -- plotlyChart' barTraces (T.pack label)
+
 
 mkHtml :: Types.ColorMap -> ColorStatsMap -> [ColorOrNot] -> Int -> Html ()
 mkHtml colorMap stats parsed len = scaffold $ do

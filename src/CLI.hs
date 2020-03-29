@@ -18,6 +18,11 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as TL
+import Data.Maybe
+import Lucid
+
+import Graphics.Plotly.Lucid
+import Graphics.Plotly
 
 -- My own modules
 import qualified ColorMaps as CM
@@ -27,11 +32,12 @@ import AnnotateColors
 import Types
 import qualified Main
 
-colorMapParser :: ValueParser CM.ColorMap
-colorMapParser cmOption = case (CM.getColorMap cmOption) of
-                            CM.ColorMap name assoc -> Right (CM.getColorMap cmOption)
-                            _ -> Left "That's not a valid color map."
 
+getColorMapEither cm = case cm of
+  "XKCD" -> Right CM.xkcd
+  "Ridgway" -> Right CM.ridgway
+  "RidgwayExtendedXKCD" -> Right CM.ridgwayExtendedXkcd
+  _ -> Left "Invalid color map name"
 
 -- | CLI to annotate colors in text.
 -- Usage: runhaskell AnnotateColor my-text-file.txt > out.html
@@ -39,13 +45,46 @@ main :: IO ()
 main = defaultMain $ do
   programName "Color Word Analyzer"
   programDescription "Text analysis for color words. Experimental."
-  colorMap    <- flagParam (FlagLong "colorMap") (FlagRequired colorMapParser)
+  colorMap    <- flagParam (FlagLong "colorMap" <>
+                           FlagDescription "name of the color map to use, e.g. XKCD")
+                (FlagRequired getColorMapEither)
   files  <- remainingArguments "FILE(s)"
   action $ \toParam -> do
       putStrLn $ "Using color map: " ++ show (toParam colorMap)
       putStrLn $ "and analyzing files: " ++ show (toParam files)
+      let firstFile = head $ toParam files
+      let cm = fromJust $ toParam colorMap
+      let filesList = toParam files
+      let traces = concatMap (analyze cm) filesList
+      let chart = plotlyChart' traces "div1"
+      let html = thinScaffold $ chart
+      TIO.putStr $ TL.toStrict $ renderText $ html
+      -- TIO.putStr $ TL.toStrict $ TL.concat $ map renderText htmls
 
-   -- -- inFile <- TIO.readFile fileName
+thinScaffold :: Html () -> Html ()
+thinScaffold contents = do
+  html_ $ do
+    head_ [] $ do
+      meta_ [charset_ "utf-8"]
+      meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
+      plotlyCDN
+    body_ $ do
+      main_ [ class_ "container" ] $ do
+        contents
+
+analyze :: CM.ColorMap -> FilePath -> [Trace]
+analyze colorMap file = do
+  rawFile <- B.readFile file
+  -- let inFile = Main.readInfile rawFile
+  let decoded = case TE.decodeUtf8' rawFile of
+                  Left err -> TE.decodeLatin1 rawFile
+                  Right text -> text
+  let label = takeBaseName file
+  -- let cm = fromJust cmMaybe
+  colorMapMap <- CM.assoc colorMap
+  Main.mkTraces decoded label colorMapMap (CM.name colorMap)
+  -- return traces
+
    -- rawByteStr <- B.readFile fileName
 
    -- -- Try to decode Utf-8 first, but if not, try Latin1.

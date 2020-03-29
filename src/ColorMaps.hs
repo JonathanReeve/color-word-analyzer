@@ -64,4 +64,4 @@ getColorMap cm = case cm of
   "XKCD" -> xkcd
   "Ridgway" -> ridgway
   "RidgwayExtendedXKCD" -> ridgwayExtendedXkcd
-  _ -> undefined
+
