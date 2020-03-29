@@ -26,13 +26,15 @@ executable color-word-analyzer
                    , FindColors
                    , PlotColors
                    , Types
+                   , CLI
   -- other-extensions:
   build-depends:       base
                      , lucid
                      , clay
                      , text
                      , bytestring
-                     , optparse-generic
+                     , http-types
+                     , cli
                      , replace-attoparsec
                      , attoparsec
                      , charsetdetect

@@ -20,7 +20,7 @@ import Types
 import CategorizeColor
 import FindColors
 
--- * Annotate color words in text, using HTML
+-- | Annotate color words in text, using HTML
 annotate :: ColorMap -> [ColorOrNot] -> T.Text
 annotate colorMapMap results = T.concat $ Prelude.map processBlock results where
   processBlock :: ColorOrNot -> T.Text

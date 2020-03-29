@@ -30,6 +30,7 @@ mkHBarTraces = Prelude.concatMap makeTraces where
   makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) -> [Trace]
   makeTraces (textName, colorMapName, colorData) = map (makeTrace textName) colorData
 
+-- | Categorize the colors, then plot them as a new bar in our bar plot.
 mkHBarParentTraces :: ColorMap -> ColorStatsMap -> [Trace]
 mkHBarParentTraces colorMap = Prelude.concatMap makeTraces where
   makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) -> [Trace]
@@ -47,20 +48,21 @@ makeTrace textName (colorWord, hex, _, n, _) = bars & P.y ?~ [toJSON textName]
                                                 (defMarker & markercolor ?~ P.All (toJSON hex))
 
 
--- Plotly stacked and filled area plot. Let's make this JavaScript:
+-- | Break up the text into N pieces, count the colors in each piece, and then
+-- make a Plotly stacked and filled area plot for it. Let's make this JavaScript:
+-- @
 -- var plotDiv = document.getElementById('plot');
 -- var traces = [
 -- 	{x: [1,2,3], y: [2,1,4], stackgroup: 'one'},
 -- 	{x: [1,2,3], y: [1,1,2], stackgroup: 'one'},
 -- 	{x: [1,2,3], y: [3,0,2], stackgroup: 'one'}
 -- ];
-
+-- @
 -- So we need Xs and Ys.
 -- For each trace:
 --   * Xs will be chunk indices (e.g. 1-10) and
 --   * Ys will be a color and its values (name, color, y-value)
-
--- type ColorStatsMap = [(TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])])]
+-- since ColorStatsMap = [(TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])])]
 mkChunkedTraces :: ColorStatsMap -> -- | Color statistics
                     Int ->  -- | Length of text
                     Int ->  -- | Number of desired chunks

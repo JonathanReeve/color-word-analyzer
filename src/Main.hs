@@ -16,6 +16,8 @@ import           Web.Scotty
 import Data.Maybe
 
 import Network.Wai.Parse
+import Network.HTTP.Types.Status
+
 import System.FilePath ((</>), takeBaseName)
 
 import qualified Clay as C
@@ -100,49 +102,26 @@ css = do
     C.backgroundColor "#555"
     C.color "#ddd"
 
-main :: IO ()
-main = do
-  port <- fromMaybe 3000
-    . join
-    . fmap readMaybe <$> lookupEnv "PORT"
-  scotty port $ do
-    middleware $ staticPolicy (noDots >-> addBase "uploads/") -- for favicon.ico
-    middleware logStdoutDev
-
-    get "/" $ do
-      html $ renderText $ homepage
-
-    post "/upload" $ do
-      cm <- param ("colorMap" :: TL.Text) :: ActionM TL.Text
-      fs <- files
-      let fs' = head [ (fieldName, BS.unpack (fileName fi), fileContent fi) | (fieldName,fi) <- fs ]
-      -- liftIO $ print fs'
-      -- write the files to disk, so they will be served by the static middleware
-      let (_, fn, fc) = fs'
-      liftIO $ B.writeFile ("uploads" </> fn) fc
-      -- generate list of links to the files just uploaded
-      colorMap <- liftIO $ CM.assoc $ CM.getColorMap cm
-      let contents = readInfile $ B.toStrict fc
-      let label = takeBaseName fn
-      html $ renderText $ doAnalysis contents label colorMap (CM.name (CM.getColorMap cm))
 
 readInfile :: BS.ByteString -> T.Text
 readInfile fc = case TE.decodeUtf8' fc of
                Left err -> TE.decodeLatin1 fc
                Right text -> text
 
-doAnalysis :: T.Text -> -- | Input file
-             String -> -- | Input file label
-             [(Types.ColorWord, Types.Hex)] -> -- | Color mapping
-             T.Text -> -- | Color mapping label
-             Html () -- | Resulting HTML
+doAnalysis :: T.Text ->
+             -- ^ Input file
+             String ->
+             -- ^ Input file label
+             [(Types.ColorWord, Types.Hex)] ->
+             -- ^ Color mapping
+             T.Text ->
+             -- ^ Color mapping label
+             Html ()
+             -- ^ Resulting HTML
 doAnalysis inFile label colorMap colorMapLabel = do
-  -- let colorMap' = CM.extendMap colorMap
   let colorMapMap = M.fromList colorMap
-
   let parsed = findReplace (colorParser colorMap) inFile
   let zipData = map getZipData (zip (getLocations parsed) parsed)
-  -- let onlyMatches = map fromJust $ filter isJust zipData
   let onlyMatches = catMaybes zipData
   let stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
   mkHtml colorMapMap [stats] parsed (T.length inFile)
@@ -158,3 +137,30 @@ mkHtml colorMap stats parsed len = scaffold $ do
     h1_ [] "Annotated Text"
     let annotated = annotate colorMap parsed
     div_ [ class_ "annotated" ] $ toHtmlRaw annotated
+
+main :: IO ()
+main = do
+  port <- fromMaybe 3000
+    . join
+    . fmap readMaybe <$> lookupEnv "PORT"
+  scotty port $ do
+    middleware $ staticPolicy (noDots >-> addBase "uploads/") -- for favicon.ico
+    middleware logStdoutDev
+
+    get "/" $ do
+      html $ renderText $ homepage
+
+    post "/upload" $ do
+      cm <- param ("colorMap" :: TL.Text) :: ActionM TL.Text
+      -- Send 202 "accepted" code as temporary
+      status status202
+      fs <- files
+      let fs' = head [ (fieldName, BS.unpack (fileName fi), fileContent fi) | (fieldName,fi) <- fs ]
+      -- liftIO $ print fs'
+      -- write the files to disk, so they will be served by the static middleware
+      let (_, fn, fc) = fs'
+      -- liftIO $ B.writeFile ("uploads" </> fn) fc
+      colorMap <- liftIO $ CM.assoc $ CM.getColorMap cm
+      let contents = readInfile $ B.toStrict fc
+      let label = takeBaseName fn
+      html $ renderText $ doAnalysis contents label colorMap (CM.name (CM.getColorMap cm))

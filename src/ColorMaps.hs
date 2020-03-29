@@ -3,6 +3,7 @@
 module ColorMaps where
 
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 import qualified Data.Text.IO as TIO
 import Data.List (sortBy)
 import Data.Function (on)
@@ -14,8 +15,11 @@ data ColorMap = ColorMap { name :: T.Text
                          , assoc :: IO [(ColorWord, Hex)]
                          }
 
+instance Show ColorMap where
+  show cm = show $ name cm
+
 type Hex = T.Text
-type ColorWord = T.Text
+type ColorWord = T.Text 
 
 parseTSV :: T.Text -> [(ColorWord, Hex)]
 parseTSV tsv = sortBy (flip (compare `on` T.length . fst)) unsorted
@@ -60,3 +64,4 @@ getColorMap cm = case cm of
   "XKCD" -> xkcd
   "Ridgway" -> ridgway
   "RidgwayExtendedXKCD" -> ridgwayExtendedXkcd
+  _ -> undefined
