@@ -119,11 +119,22 @@ doAnalysis :: T.Text ->
              -- ^ Resulting HTML
 doAnalysis inFile label colorMap colorMapLabel = do
   let colorMapMap = M.fromList colorMap
-  let parsed = findReplace (colorParser colorMap) inFile
-  let zipData = map getZipData (zip (getLocations parsed) parsed)
-  let onlyMatches = catMaybes zipData
-  let stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
-  mkHtml colorMapMap [stats] parsed (T.length inFile)
+      parsed = findReplace (colorParser colorMap) inFile
+      zipData = map getZipData (zip (getLocations parsed) parsed)
+      onlyMatches = catMaybes zipData
+      stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
+      textLength = T.length inFile
+      adjustedByLength = adjustStatsByLength stats textLength
+  mkHtml colorMapMap [adjustedByLength] parsed textLength
+
+adjustStatsByLength :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) ->
+                      Int ->
+                      -- ^ Text length
+                      (TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])])
+adjustStatsByLength (textName, colorMapName, stats) len = (textName, colorMapName, map adjustStat stats) where
+  adjustStat :: (ColorWord, Hex, Parent, Int, [Span]) -> (ColorWord, Hex, Parent, Double, [Span])
+  adjustStat (cw, hex, par, n, spans) = (cw, hex, par, adjustedLen, spans)
+  adjustedLen = n / len :: Double
 
 -- | Only make the first chart, and don't scaffold
 mkTraces :: T.Text ->
@@ -138,11 +149,13 @@ mkTraces :: T.Text ->
              -- ^ Resulting HTML
 mkTraces inFile label colorMap colorMapLabel = do
   let colorMapMap = M.fromList colorMap
-  let parsed = findReplace (colorParser colorMap) inFile
-  let zipData = map getZipData (zip (getLocations parsed) parsed)
-  let onlyMatches = catMaybes zipData
-  let stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
-  mkHBarTraces [stats] -- ++ (mkHBarParentTraces colorMapMap [stats])
+      parsed = findReplace (colorParser colorMap) inFile
+      zipData = map getZipData (zip (getLocations parsed) parsed)
+      onlyMatches = catMaybes zipData
+      stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
+      textLength = T.length inFile
+      adjustedByLength = adjustStatsByLength stats textLength
+  mkHBarTraces [adjustedByLength] -- ++ (mkHBarParentTraces colorMapMap [stats])
   -- plotlyChart' barTraces (T.pack label)
 
 

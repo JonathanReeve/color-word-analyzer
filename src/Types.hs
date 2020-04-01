@@ -21,7 +21,7 @@ type ColorWord = T.Text
 type Hex = T.Text
 type Parent = T.Text -- Category
 
-type ColorStatsMap = [(TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])])]
+type ColorStatsMap = [(TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])])]
 type TextName = T.Text
 type ColorMapName = T.Text
 

@@ -27,19 +27,19 @@ plotlyChart' traces divName = toHtml $ plotly divName traces
 -- name is the color name.
 mkHBarTraces :: ColorStatsMap -> [Trace]
 mkHBarTraces = Prelude.concatMap makeTraces where
-  makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) -> [Trace]
+  makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])]) -> [Trace]
   makeTraces (textName, colorMapName, colorData) = map (makeTrace textName) colorData
 
 -- | Categorize the colors, then plot them as a new bar in our bar plot.
 mkHBarParentTraces :: ColorMap -> ColorStatsMap -> [Trace]
 mkHBarParentTraces colorMap = Prelude.concatMap makeTraces where
-  makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) -> [Trace]
+  makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])]) -> [Trace]
   makeTraces (textName, colorMapName, colorData) = map (makeTrace textName') colorData' where
     textName' = T.concat [textName, "-categories"]
     colorData' = map parentToColor colorData
     parentToColor (colorWord, hex, parent, n, spans) = (parent, colorMap M.! parent, "NAN", n, spans)
 
-makeTrace :: TextName -> (ColorWord, Hex, Parent, Int, [Span]) -> Trace
+makeTrace :: TextName -> (ColorWord, Hex, Parent, Double, [Span]) -> Trace
 makeTrace textName (colorWord, hex, _, n, _) = bars & P.y ?~ [toJSON textName]
                                                 & P.x ?~ [toJSON n]
                                                 & name ?~ colorWord
@@ -69,7 +69,7 @@ mkChunkedTraces :: ColorStatsMap -> -- | Color statistics
                     [Trace]
 mkChunkedTraces stats len nChunks = concatMap makeStat stats where
   makeStat (textName, cm, statsList) = map mkTrace statsList where
-    mkTrace :: (ColorWord, Hex, Parent, Int, [Span]) -> Trace
+    mkTrace :: (ColorWord, Hex, Parent, Double, [Span]) -> Trace
     mkTrace (colorWord, hex, parent, count, spanList) =
       scatter & P.x     ?~ fmap toJSON [1..nChunks]
               & P.y     ?~ fmap toJSON yVals
