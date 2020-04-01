@@ -54,53 +54,30 @@ main = defaultMain $ do
       putStrLn $ "and analyzing files: " ++ show (toParam files)
       let firstFile = head $ toParam files
       let cm = fromJust $ toParam colorMap
+      cmm <- CM.assoc cm
+      let cmLabel = CM.name cm
       let filesList = toParam files
-      let traces = concatMap (analyze cm) filesList
-      let chart = plotlyChart' traces "div1"
-      let html = thinScaffold $ chart
-      TIO.putStr $ TL.toStrict $ renderText $ html
+      traces <- mapM (analyze cmm cmLabel) filesList
+      let chart = plotlyChart' (concat traces) "div1"
+      let html = thinScaffold chart
+      TIO.putStr $ TL.toStrict $ renderText html
       -- TIO.putStr $ TL.toStrict $ TL.concat $ map renderText htmls
 
 thinScaffold :: Html () -> Html ()
-thinScaffold contents = do
+thinScaffold contents =
   html_ $ do
-    head_ [] $ do
-      meta_ [charset_ "utf-8"]
-      meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
-      plotlyCDN
-    body_ $ do
-      main_ [ class_ "container" ] $ do
-        contents
+  head_ [] $ do
+    meta_ [charset_ "utf-8"]
+    meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
+    plotlyCDN
+  body_ $
+    main_ [ class_ "container" ] contents
 
-analyze :: CM.ColorMap -> FilePath -> [Trace]
-analyze colorMap file = do
+-- analyze :: CM.ColorMap -> FilePath -> [Trace]
+analyze colorMap cmLabel file = do
   rawFile <- B.readFile file
-  -- let inFile = Main.readInfile rawFile
   let decoded = case TE.decodeUtf8' rawFile of
                   Left err -> TE.decodeLatin1 rawFile
                   Right text -> text
   let label = takeBaseName file
-  -- let cm = fromJust cmMaybe
-  colorMapMap <- CM.assoc colorMap
-  Main.mkTraces decoded label colorMapMap (CM.name colorMap)
-  -- return traces
-
-   -- rawByteStr <- B.readFile fileName
-
-   -- -- Try to decode Utf-8 first, but if not, try Latin1.
-   -- let inFile = case TE.decodeUtf8' rawByteStr of
-   --                Left err -> TE.decodeLatin1 rawByteStr
-   --                Right text -> text
-
-   -- let label = takeBaseName fileName
-
-   -- let cm = CM.xkcd
-   -- colorMap <- CM.assoc cm
-   -- let html = doAnalysis inFile label colorMap (CM.name cm)
-
-   -- -- Write to a file.
-   -- let outFileName = label ++ "-out.html"
-   -- renderToFile outFileName html
-
-   -- -- Output just the data.
-   -- -- TIO.putStrLn . TE.decodeUtf8 . BL.toStrict . encode $ stats
+  return $ Main.mkTraces decoded label colorMap cmLabel
