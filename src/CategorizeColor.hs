@@ -7,7 +7,7 @@ import qualified Data.Text as T
 import Data.List (sortBy, sortOn, minimumBy)
 import Data.Ord (comparing)
 import Data.Maybe (fromMaybe)
-
+import Data.Bifunctor (second)
 import Data.Colour.SRGB
 import Data.Colour.CIE (luminance, cieLABView)
 import Data.Colour.RGBSpace.HSV
@@ -23,7 +23,7 @@ categorizeColor color colorMap = argMin deltas where
   baseColorMap = [ (baseColor, fromMaybe "#ffffff" (colorMap M.!? baseColor)) | baseColor <- baseColors ]
   -- Make Colour objects for each hex
   baseColours :: [ (ColorWord, Colour Double) ]
-  baseColours = map (\(cWord, cHex) -> (cWord, readColor cHex)) baseColorMap
+  baseColours = map (second readColor) baseColorMap
   deltas :: [ (ColorWord, Double) ]
   deltas = [ (fst baseColor, deltaE76 (readColor color) (snd baseColor)) | baseColor <- baseColours ]
   argMin xs = fst $ minimumBy (comparing snd) xs
@@ -43,7 +43,10 @@ deltaE76 color1 color2 = sqrt $ (l2-l1)**2 + (a2-a1)**2 + (b2-b1)**2 where
 baseColors :: [ColorWord]
 baseColors = ["black", "white", "grey", "red", "orange", "yellow", "green", "blue", "purple"]
 
-sortColors :: (Colour Double -> Double) -> [(ColorWord, Hex, Parent, Int, [Span])] -> [(ColorWord, Hex, Parent, Int, [Span])]
-sortColors selectionFunction colorStats = sortOn sortFunction colorStats where
-  -- convert to HSL and get the hue to sort on.
-  sortFunction (_, hex, _, _, _) = selectionFunction $ readColor hex
+-- sortColors :: (Colour Double -> Double) -> [(ColorWord, Hex, Parent, Int, [Span])] -> [(ColorWord, Hex, Parent, Int, [Span])]
+-- sortColors selectionFunction colorStats = sortOn sortFunction colorStats where
+--   -- convert to HSL and get the hue to sort on.
+--   sortFunction (_, hex, _, _, _) = selectionFunction $ readColor hex
+
+sortColors :: (Colour Double -> Double) -> [ColorStat] -> [ColorStat]
+sortColors selectionFunction = sortOn (selectionFunction . readColor . hex)

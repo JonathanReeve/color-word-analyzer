@@ -5,7 +5,6 @@ module Main where
 import           Control.Monad                        (join, forM_)
 import           Control.Monad.IO.Class               (liftIO)
 import           Control.Applicative                  ((<$>))
-import           Data.Maybe                           (fromMaybe)
 import           Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import           Network.Wai.Middleware.Static        (addBase, noDots,
                                                        staticPolicy, (>->))
@@ -127,14 +126,23 @@ doAnalysis inFile label colorMap colorMapLabel = do
       adjustedByLength = adjustStatsByLength stats textLength
   mkHtml colorMapMap [adjustedByLength] parsed textLength
 
-adjustStatsByLength :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) ->
+-- adjustStatsByLength :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) ->
+--                       Int ->
+--                       -- ^ Text length
+--                       (TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])])
+-- adjustStatsByLength (textName, colorMapName, stats) len = (textName, colorMapName, map adjustStat stats) where
+--   adjustStat :: (ColorWord, Hex, Parent, Int, [Span]) -> (ColorWord, Hex, Parent, Double, [Span])
+--   adjustStat (cw, hex, par, n, spans) = (cw, hex, par, adjustedLen, spans)
+--   adjustedLen = n / len :: Double
+
+adjustStatsByLength :: TextColorStats ->
                       Int ->
                       -- ^ Text length
-                      (TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])])
-adjustStatsByLength (textName, colorMapName, stats) len = (textName, colorMapName, map adjustStat stats) where
-  adjustStat :: (ColorWord, Hex, Parent, Int, [Span]) -> (ColorWord, Hex, Parent, Double, [Span])
-  adjustStat (cw, hex, par, n, spans) = (cw, hex, par, adjustedLen, spans)
-  adjustedLen = n / len :: Double
+                      TextColorStats
+adjustStatsByLength stats len = stats { statsList = map adjustStat (statsList stats)
+                                      } where
+  adjustStat :: ColorStat -> ColorStat
+  adjustStat stats  = stats { nMatches = (nMatches stats / toEnum len) :: Double }
 
 -- | Only make the first chart, and don't scaffold
 mkTraces :: T.Text ->
@@ -159,7 +167,7 @@ mkTraces inFile label colorMap colorMapLabel = do
   -- plotlyChart' barTraces (T.pack label)
 
 
-mkHtml :: Types.ColorMap -> ColorStatsMap -> [ColorOrNot] -> Int -> Html ()
+mkHtml :: Types.ColorMap -> [TextColorStats] -> [ColorOrNot] -> Int -> Html ()
 mkHtml colorMap stats parsed len = scaffold $ do
     h1_ [] "Color Words in Aggregate"
     let barTraces = mkHBarTraces stats ++ mkHBarParentTraces colorMap stats

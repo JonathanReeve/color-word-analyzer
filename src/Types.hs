@@ -21,8 +21,17 @@ type ColorWord = T.Text
 type Hex = T.Text
 type Parent = T.Text -- Category
 
-type ColorStatsMap = [(TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])])]
 type TextName = T.Text
 type ColorMapName = T.Text
 
-data ColorStats = ColorStatsMap deriving (Generic, ToJSON, FromJSON)
+data TextColorStats = TextColorStats { textName :: T.Text
+                                     , colorMapName :: T.Text
+                                     , statsList :: [ColorStat]
+                                     } deriving (Generic, ToJSON, FromJSON)
+
+data ColorStat = ColorStat { colorWord :: T.Text
+                           , hex :: T.Text
+                           , parent :: T.Text
+                           , nMatches :: Double
+                           , locations :: [Span]
+                           } deriving (Generic, ToJSON, FromJSON)

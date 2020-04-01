@@ -19,7 +19,7 @@ instance Show ColorMap where
   show cm = show $ name cm
 
 type Hex = T.Text
-type ColorWord = T.Text 
+type ColorWord = T.Text
 
 parseTSV :: T.Text -> [(ColorWord, Hex)]
 parseTSV tsv = sortBy (flip (compare `on` T.length . fst)) unsorted

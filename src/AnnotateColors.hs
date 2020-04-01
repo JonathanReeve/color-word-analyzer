@@ -65,14 +65,18 @@ getZipData (locs, parsed) = case parsed of
   Left _ -> Nothing
   Right (txtFormat, stdFormat) -> Just (locs, txtFormat, stdFormat)
 
-makeStats :: TextName -> ColorMapName -> M.Map ColorWord [Span] -> ColorMap ->
-  (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])])
-makeStats fileName mapName locs colorMap = (fileName, mapName, stats ) where
+makeStats :: TextName -> ColorMapName -> M.Map ColorWord [Span] -> ColorMap -> TextColorStats
+makeStats fileName mapName locs colorMap = TextColorStats { textName = fileName
+                                                          , colorMapName = mapName
+                                                          , statsList = stats } where
   -- TODO: add more sort functions than just luminance.
   stats = sortColors luminance $ Prelude.map makeStat (M.toList locs)
-  makeStat (colorWord, spans) = (colorWord, hex, parent, length spans, spans) where
+  makeStat (colorWord, spans) = ColorStat { colorWord = colorWord
+                                          , hex = hex
+                                          , parent = categorizeColor hex colorMap
+                                          , nMatches = toEnum (length spans) :: Double
+                                          , locations = spans}  where
     hex = fromMaybe "UNDEFINED" (colorMap M.!? colorWord)
-    parent = categorizeColor hex colorMap
 
 -- | Utility to convert a list [("a", 2), ("a", 3), ("b", 2)] to a Map
 -- like [("a", [2, 3]), "b", [2])]

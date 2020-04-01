@@ -25,27 +25,31 @@ plotlyChart' traces divName = toHtml $ plotly divName traces
 -- the name of the text.
 -- X is a list with one value each [x]
 -- name is the color name.
-mkHBarTraces :: ColorStatsMap -> [Trace]
-mkHBarTraces = Prelude.concatMap makeTraces where
-  makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])]) -> [Trace]
-  makeTraces (textName, colorMapName, colorData) = map (makeTrace textName) colorData
+mkHBarTraces :: [TextColorStats] -> [Trace]
+mkHBarTraces = Prelude.concatMap (\stats -> map (makeTrace (textName stats)) (statsList stats))
 
 -- | Categorize the colors, then plot them as a new bar in our bar plot.
-mkHBarParentTraces :: ColorMap -> ColorStatsMap -> [Trace]
+mkHBarParentTraces :: ColorMap -> [TextColorStats] -> [Trace]
 mkHBarParentTraces colorMap = Prelude.concatMap makeTraces where
-  makeTraces :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Double, [Span])]) -> [Trace]
-  makeTraces (textName, colorMapName, colorData) = map (makeTrace textName') colorData' where
-    textName' = T.concat [textName, "-categories"]
-    colorData' = map parentToColor colorData
-    parentToColor (colorWord, hex, parent, n, spans) = (parent, colorMap M.! parent, "NAN", n, spans)
+  makeTraces :: TextColorStats -> [Trace]
+  makeTraces stats = map (makeTrace textName') colorData' where
+    textName' = T.concat [textName stats, "-categories"]
+    colorData' = map parentToColor (statsList stats)
+    parentToColor :: ColorStat -> ColorStat
+    parentToColor colorData = ColorStat { colorWord = parent colorData
+                                        , hex = colorMap M.! parent colorData
+                                        , parent = "NAN"
+                                        , nMatches = nMatches colorData
+                                        , locations = locations colorData
+                                        }
 
-makeTrace :: TextName -> (ColorWord, Hex, Parent, Double, [Span]) -> Trace
-makeTrace textName (colorWord, hex, _, n, _) = bars & P.y ?~ [toJSON textName]
-                                                & P.x ?~ [toJSON n]
-                                                & name ?~ colorWord
+makeTrace :: TextName -> ColorStat -> Trace
+makeTrace textName stats = bars & P.y ?~ [toJSON textName]
+                                                & P.x ?~ [toJSON (nMatches stats)]
+                                                & name ?~ colorWord stats
                                                 & orientation ?~ Horizontal
                                                 & marker ?~
-                                                (defMarker & markercolor ?~ P.All (toJSON hex))
+                                                (defMarker & markercolor ?~ P.All (toJSON (hex stats)))
 
 
 -- | Break up the text into N pieces, count the colors in each piece, and then
@@ -63,24 +67,23 @@ makeTrace textName (colorWord, hex, _, n, _) = bars & P.y ?~ [toJSON textName]
 --   * Xs will be chunk indices (e.g. 1-10) and
 --   * Ys will be a color and its values (name, color, y-value)
 -- since ColorStatsMap = [(TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])])]
-mkChunkedTraces :: ColorStatsMap -> -- | Color statistics
+mkChunkedTraces :: [TextColorStats] -> -- | Color statistics
                     Int ->  -- | Length of text
                     Int ->  -- | Number of desired chunks
                     [Trace]
-mkChunkedTraces stats len nChunks = concatMap makeStat stats where
-  makeStat (textName, cm, statsList) = map mkTrace statsList where
-    mkTrace :: (ColorWord, Hex, Parent, Double, [Span]) -> Trace
-    mkTrace (colorWord, hex, parent, count, spanList) =
+mkChunkedTraces allTextStats len nChunks = concatMap makeStat allTextStats where
+  makeStat stats = map mkTrace (statsList stats) where
+    mkTrace :: ColorStat -> Trace
+    mkTrace stat =
       scatter & P.x     ?~ fmap toJSON [1..nChunks]
               & P.y     ?~ fmap toJSON yVals
-              & name    ?~ colorWord
+              & name    ?~ colorWord stat
               & mode    ?~ [Lines]
-              & marker ?~ (defMarker & markercolor ?~ P.All (toJSON hex))
+              & marker ?~ (defMarker & markercolor ?~ P.All (toJSON (hex stat)))
               & stackgroup ?~ "one"
       where
       -- Make Y values, which are the number of times a color appears in a chunk.
       -- Ex: 0 1 2 0 0 0 10 2 0
       yVals = V.toList $ snd (S.histogram nChunks spanVec) :: [Int]
-      starts = map (fromIntegral . fst) spanList :: [Double]
+      starts = map (fromIntegral . fst) (locations stat) :: [Double]
       spanVec = V.fromList starts :: V.Vector Double
-
