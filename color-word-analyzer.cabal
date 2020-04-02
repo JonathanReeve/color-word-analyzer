@@ -18,16 +18,15 @@ build-type:          Simple
 extra-source-files:  CHANGELOG.md
 data-dir:            data/
 
-executable color-word-analyzer
-  main-is:           Main.hs
+executable color-word-analyzer-cli
+  main-is:           CLI.hs
   other-modules:     AnnotateColors
                    , CategorizeColor
                    , ColorMaps
                    , FindColors
                    , PlotColors
                    , Types
-                   , CLI
-  -- other-extensions:
+                   , Main
   build-depends:       base
                      , lucid
                      , clay
