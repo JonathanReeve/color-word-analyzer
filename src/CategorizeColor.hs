@@ -25,7 +25,7 @@ categorizeColor color colorMap = argMin deltas where
   baseColours :: [ (ColorWord, Colour Double) ]
   baseColours = map (second readColor) baseColorMap
   deltas :: [ (ColorWord, Double) ]
-  deltas = [ (fst baseColor, deltaE76 (readColor color) (snd baseColor)) | baseColor <- baseColours ]
+  deltas = [ second (deltaE76 (readColor color)) baseColor | baseColor <- baseColours ]
   argMin xs = fst $ minimumBy (comparing snd) xs
 
 readColor :: Hex -> Colour Double

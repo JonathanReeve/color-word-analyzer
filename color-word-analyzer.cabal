@@ -3,9 +3,9 @@ cabal-version:       >=1.10
 name:                color-word-analyzer
 version:             0.1.0.0
 synopsis:            Finds color words in text, and produces charts.
--- description:
+description:         A web app and CLI for finding color words in a text, and analyzing theem.
 -- bug-reports:
--- license:             GNU General Public License v3.0 or later
+license:             GPL-3
  
 license-file:        LICENSE.md
 author:              Jonathan Reeve
@@ -15,11 +15,12 @@ category:            Text
 stability:           experimental
 homepage:            https://github.com/JonathanReeve/color-word-analyzer 
 build-type:          Simple
-extra-source-files:  CHANGELOG.md
-data-dir:            data/
+-- extra-source-files:  CHANGELOG.md
+-- data-dir:            data/
 
 executable color-word-analyzer-cli
   main-is:           CLI.hs
+  ghc-options:       -threaded -main-is CLI
   other-modules:     AnnotateColors
                    , CategorizeColor
                    , ColorMaps
@@ -27,27 +28,30 @@ executable color-word-analyzer-cli
                    , PlotColors
                    , Types
                    , Main
-  build-depends:       base
-                     , lucid
-                     , clay
-                     , text
-                     , bytestring
-                     , http-types
-                     , cli
-                     , replace-attoparsec
-                     , attoparsec
-                     , charsetdetect
-                     , containers
-                     , aeson
-                     , plotlyhs
-                     , microlens
-                     , filepath
-                     , colour
+                   , Data.Ridgway
+                   , Data.Xkcd
+  build-depends:       base >= 4.10 && < 4.13
                      , Color
                      , Frames
-                     , vector
-                     , statistics
+                     , aeson
+                     , attoparsec
+                     , bytestring
+                     , charsetdetect
+                     , clay
+                     , cli
+                     , colour
+                     , containers
+                     , filepath
+                     , http-types
+                     , lucid
+                     , microlens
+                     , plotlyhs
+                     , replace-attoparsec
                      , scotty
+                     , statistics
+                     , text
+                     , unordered-containers
+                     , vector
                      , wai-extra
                      , wai-middleware-static
   hs-source-dirs:      src/

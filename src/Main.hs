@@ -166,6 +166,26 @@ mkTraces inFile label colorMap colorMapLabel = do
   mkHBarTraces [adjustedByLength] -- ++ (mkHBarParentTraces colorMapMap [stats])
   -- plotlyChart' barTraces (T.pack label)
 
+-- | Only make the first chart, and don't scaffold
+mkStats :: T.Text ->
+             -- ^ Input file
+             String ->
+             -- ^ Input file label
+             [(Types.ColorWord, Types.Hex)] ->
+             -- ^ Color mapping
+             T.Text ->
+             -- ^ Color mapping label
+             [TextColorStats]
+             -- ^ Resulting HTML
+mkStats inFile label colorMap colorMapLabel = do
+  let colorMapMap = M.fromList colorMap
+      parsed = findReplace (colorParser colorMap) inFile
+      zipData = map getZipData (zip (getLocations parsed) parsed)
+      onlyMatches = catMaybes zipData
+      stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
+      textLength = T.length inFile
+      adjustedByLength = adjustStatsByLength stats textLength
+  return adjustedByLength
 
 mkHtml :: Types.ColorMap -> [TextColorStats] -> [ColorOrNot] -> Int -> Html ()
 mkHtml colorMap stats parsed len = scaffold $ do

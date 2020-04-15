@@ -12,6 +12,7 @@ import Codec.Text.Detect (detectEncoding)
 import System.FilePath
 import Console.Options
 
+import Data.Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text as T
@@ -62,6 +63,10 @@ main = defaultMain $ do
       let html = thinScaffold chart
       TIO.putStr $ TL.toStrict $ renderText html
       -- TIO.putStr $ TL.toStrict $ TL.concat $ map renderText htmls
+      -- allStats <- mapM (justStats cmm cmLabel) filesList
+      -- let json = toJSON allStats
+      -- BL.putStr $ encode json
+
 
 thinScaffold :: Html () -> Html ()
 thinScaffold contents =
@@ -81,3 +86,11 @@ analyze colorMap cmLabel file = do
                   Right text -> text
   let label = takeBaseName file
   return $ Main.mkTraces decoded label colorMap cmLabel
+
+justStats colorMap cmLabel file = do
+  rawFile <- B.readFile file
+  let decoded = case TE.decodeUtf8' rawFile of
+                  Left err -> TE.decodeLatin1 rawFile
+                  Right text -> text
+  let label = takeBaseName file
+  return $ Main.mkStats decoded label colorMap cmLabel
