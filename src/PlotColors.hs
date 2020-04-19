@@ -12,13 +12,21 @@ import Lens.Micro
 import Lucid
 import qualified Statistics.Sample.Histogram as S
 import qualified Data.Vector as V
-
+import qualified Data.HashMap.Strict as HM
 import Types
 
 -- | Let's do that again, but just take traces.
 plotlyChart' :: [Trace] -> T.Text -> Html ()
 plotlyChart' traces divName = toHtml $ plotly divName traces
                               & layout . barmode ?~ Stack
+
+-- | Plot multiple texts in one chart,
+-- expanding the chart according to the number of texts.
+plotlyChartMulti :: [Trace] -> T.Text -> Int -> Html ()
+plotlyChartMulti traces divName nTexts = toHtml $ plotly divName traces
+                              & layout . barmode ?~ Stack
+                              & layout . height ?~ 50 * nTexts
+                              & layout . hovermode ?~ Closest
 
 -- | Make traces from color data.
 -- We need three traces here. Y is the same in all:
@@ -37,7 +45,7 @@ mkHBarParentTraces colorMap = Prelude.concatMap makeTraces where
     colorData' = map parentToColor (statsList stats)
     parentToColor :: ColorStat -> ColorStat
     parentToColor colorData = ColorStat { colorWord = parent colorData
-                                        , hex = colorMap M.! parent colorData
+                                        , hex = HM.fromList (mapAssoc colorMap) HM.! parent colorData
                                         , parent = "NAN"
                                         , nMatches = nMatches colorData
                                         , locations = locations colorData

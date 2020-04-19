@@ -33,11 +33,14 @@ import AnnotateColors
 import Types
 import qualified Main
 
+import Data.Xkcd
+import Data.Ridgway
+import Data.Master
 
 getColorMapEither cm = case cm of
-  "XKCD" -> Right CM.xkcd
-  "Ridgway" -> Right CM.ridgway
-  "RidgwayExtendedXKCD" -> Right CM.ridgwayExtendedXkcd
+  "XKCD" -> Right Data.Xkcd.xkcd
+  "Ridgway" -> Right Data.Ridgway.ridgway
+  "Master" -> Right Data.Ridgway.ridgway
   _ -> Left "Invalid color map name"
 
 -- | CLI to annotate colors in text.
@@ -49,24 +52,34 @@ main = defaultMain $ do
   colorMap    <- flagParam (FlagLong "colorMap" <>
                            FlagDescription "name of the color map to use, e.g. XKCD")
                 (FlagRequired getColorMapEither)
+  statsOnly    <- flag (FlagLong "statsOnly" <>
+                       FlagDescription "Print JSON instead of HTML.")
   files  <- remainingArguments "FILE(s)"
   action $ \toParam -> do
       putStrLn $ "Using color map: " ++ show (toParam colorMap)
       putStrLn $ "and analyzing files: " ++ show (toParam files)
-      let firstFile = head $ toParam files
       let cm = fromJust $ toParam colorMap
-      cmm <- CM.assoc cm
-      let cmLabel = CM.name cm
       let filesList = toParam files
-      traces <- mapM (analyze cmm cmLabel) filesList
-      let chart = plotlyChart' (concat traces) "div1"
-      let html = thinScaffold chart
-      TIO.putStr $ TL.toStrict $ renderText html
-      -- TIO.putStr $ TL.toStrict $ TL.concat $ map renderText htmls
-      -- allStats <- mapM (justStats cmm cmLabel) filesList
-      -- let json = toJSON allStats
-      -- BL.putStr $ encode json
+      if toParam statsOnly then do
+        allStats <- mapM (justStats cm) filesList
+        let json = toJSON allStats
+        BL.putStr $ encode json
+      else
+        if length filesList == 1 then
+          analyzeSingleText cm (head filesList)
+        else
+          analyzeMultipleTexts cm filesList
 
+analyzeMultipleTexts colorMap filesList = do
+  traces <- mapM (analyze colorMap) filesList
+  let chart = plotlyChartMulti (concat traces) "div1" (length filesList)
+  let html = thinScaffold chart
+  TIO.putStr $ TL.toStrict $ renderText html
+
+analyzeSingleText colorMap file = do
+  fileContents <- TIO.readFile file
+  let label = takeBaseName file
+  TIO.putStr $ TL.toStrict $ renderText $ Main.doAnalysis fileContents label colorMap
 
 thinScaffold :: Html () -> Html ()
 thinScaffold contents =
@@ -78,19 +91,20 @@ thinScaffold contents =
   body_ $
     main_ [ class_ "container" ] contents
 
--- analyze :: CM.ColorMap -> FilePath -> [Trace]
-analyze colorMap cmLabel file = do
-  rawFile <- B.readFile file
-  let decoded = case TE.decodeUtf8' rawFile of
-                  Left err -> TE.decodeLatin1 rawFile
-                  Right text -> text
-  let label = takeBaseName file
-  return $ Main.mkTraces decoded label colorMap cmLabel
+readAndDecodeFile :: FilePath -> IO T.Text
+readAndDecodeFile inFile = do
+  rawFile <- B.readFile inFile
+  return $ case TE.decodeUtf8' rawFile of
+    Left err -> TE.decodeLatin1 rawFile
+    Right text -> text
 
-justStats colorMap cmLabel file = do
-  rawFile <- B.readFile file
-  let decoded = case TE.decodeUtf8' rawFile of
-                  Left err -> TE.decodeLatin1 rawFile
-                  Right text -> text
-  let label = takeBaseName file
-  return $ Main.mkStats decoded label colorMap cmLabel
+-- analyze :: CM.ColorMap -> FilePath -> [Trace]
+analyze :: ColorMap -> FilePath -> IO [Trace]
+analyze colorMap file = do
+  decoded <- readAndDecodeFile file
+  return $ Main.mkTraces decoded (takeBaseName file) colorMap
+
+justStats :: ColorMap -> FilePath -> IO [TextColorStats]
+justStats colorMap file = do
+  decoded <- readAndDecodeFile file
+  return $ Main.mkStats decoded (takeBaseName file) colorMap

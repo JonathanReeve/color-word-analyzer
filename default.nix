@@ -9,6 +9,6 @@ in
           ghcid
         ]);
     source-overrides = {
-      plotlyhs = builtins.fetchTarball "https://github.com/JonathanReeve/plotlyhs/archive/d07770b.tar.gz";
+      plotlyhs = builtins.fetchTarball "https://github.com/JonathanReeve/plotlyhs/archive/0fcf833.tar.gz";
     };
   }

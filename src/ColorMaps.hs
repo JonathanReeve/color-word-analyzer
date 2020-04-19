@@ -8,60 +8,43 @@ import qualified Data.Text.IO as TIO
 import Data.List (sortBy)
 import Data.Function (on)
 import qualified Data.Map.Strict as M
+import qualified Data.HashMap.Strict as HM
+
+import Data.Ridgway
+import Data.Xkcd
+import Data.Master
 
 import CategorizeColor (baseColors)
 
-data ColorMap = ColorMap { name :: T.Text
-                         , assoc :: IO [(ColorWord, Hex)]
-                         }
-
-instance Show ColorMap where
-  show cm = show $ name cm
-
-type Hex = T.Text
-type ColorWord = T.Text
-
-parseTSV :: T.Text -> [(ColorWord, Hex)]
-parseTSV tsv = sortBy (flip (compare `on` T.length . fst)) unsorted
-  where
-    textLines = tail $ T.lines tsv
-    unsorted = [ mapTuple T.strip ( T.breakOn "\t" ln ) | ln <- textLines ]
-    mapTuple f (a1, a2) = (f a1, f a2)
-
-xkcd = ColorMap { name = "XKCD"
-                , assoc = parseTSV <$> TIO.readFile "data/xkcd.tsv"
-                }
-
-ridgway = ColorMap { name = "Ridgway"
-                   , assoc = parseTSV <$> TIO.readFile "data/ridgway.tsv"
-                   }
+import Types
 
 -- | Take a color map containing things like ("nile blue", "#4E5180")
 --   and return ("nile", "#4E5180"), ("blue", "#4E5180")
-extendMap :: [(ColorWord, Hex)] -> [(ColorWord, Hex)]
-extendMap colorMap = concatMap split colorMap where
-  split :: (ColorWord, Hex) -> [(ColorWord, Hex)]
-  split (cw, hex) = map (\word -> (word, hex)) (T.words cw)
+-- extendMap :: [(ColorWord, Hex)] -> [(ColorWord, Hex)]
+-- extendMap colorMap = concatMap split colorMap where
+--   split :: (ColorWord, Hex) -> [(ColorWord, Hex)]
+--   split (cw, hex) = map (\word -> (word, hex)) (T.words cw)
 
--- | An extended Ridgway, with base colors from XKCD,
--- since Ridgway bizarrely doesn't have base colors.
-ridgwayXkcdMap = do
-  rwMap <- M.fromList . extendMap <$> assoc ridgway
-  xkcdMap <- M.fromList <$> assoc xkcd
-  let xkcdBase = M.fromList [ (baseColor, (M.findWithDefault "#ffffff" baseColor xkcdMap))
-                   | baseColor <- baseColors ]
-  return (M.union xkcdBase rwMap)
-  -- return $ [ M.insert (fst item) (snd item) rwMap | item <- xkcdBase ]
-  -- return $ foldl (\item -> M.insert (fst item) (snd item) rwMap) xkcdBase
+-- -- | An extended Ridgway, with base colors from XKCD,
+-- -- since Ridgway bizarrely doesn't have base colors.
+-- ridgwayXkcdMap = do
+--   let rwMap = HM.fromList . extendMap <$> mapAssoc ridgway
+--       xkcdMap = HM.fromList <$> mapAssoc Data.Xkcd.xkcd
+--       xkcdBase = HM.fromList [ (baseColor, (M.findWithDefault "#ffffff" baseColor xkcdMap))
+--                              | baseColor <- baseColors ]
+--   return (HM.union xkcdBase rwMap)
+--   -- return $ [ M.insert (fst item) (snd item) rwMap | item <- xkcdBase ]
+--   -- return $ foldl (\item -> M.insert (fst item) (snd item) rwMap) xkcdBase
 
-ridgwayExtendedXkcd = ColorMap { name = "RidgwayExtendedXKCD"
-                               , assoc = M.toList <$> ridgwayXkcdMap
-                               }
+-- ridgwayExtendedXkcd = ColorMap { mapName = "RidgwayExtendedXKCD"
+--                                , mapAssoc = HM.toList <$> ridgwayXkcdMap
+--                                }
 
-colorMaps = [xkcd, ridgway, ridgwayExtendedXkcd]
+xkcd = Data.Xkcd.xkcd
+colorMaps = [Data.Xkcd.xkcd, Data.Ridgway.ridgway, Data.Master.master]
 
 getColorMap cm = case cm of
-  "XKCD" -> xkcd
-  "Ridgway" -> ridgway
-  "RidgwayExtendedXKCD" -> ridgwayExtendedXkcd
-
+  "XKCD" -> Data.Xkcd.xkcd
+  "Ridgway" -> Data.Ridgway.ridgway
+  "Master" -> Data.Master.master
+  -- "RidgwayExtendedXKCD" -> ridgwayExtendedXkcd

@@ -30,7 +30,8 @@ executable color-word-analyzer-cli
                    , Main
                    , Data.Ridgway
                    , Data.Xkcd
-  build-depends:       base >= 4.10 && < 4.13
+                   , Data.Master
+  build-depends:       base
                      , Color
                      , Frames
                      , aeson

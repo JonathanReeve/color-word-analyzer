@@ -3,6 +3,7 @@
 module CategorizeColor where
 
 import qualified Data.Map.Strict as M
+import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 import Data.List (sortBy, sortOn, minimumBy)
 import Data.Ord (comparing)
@@ -20,7 +21,7 @@ import Types
 categorizeColor :: Hex -> ColorMap -> ColorWord
 categorizeColor color colorMap = argMin deltas where
   -- Default to white if we can't find the base color
-  baseColorMap = [ (baseColor, fromMaybe "#ffffff" (colorMap M.!? baseColor)) | baseColor <- baseColors ]
+  baseColorMap = [ (baseColor, HM.lookupDefault "#ffffff" baseColor (HM.fromList (mapAssoc colorMap))) | baseColor <- baseColors ]
   -- Make Colour objects for each hex
   baseColours :: [ (ColorWord, Colour Double) ]
   baseColours = map (second readColor) baseColorMap

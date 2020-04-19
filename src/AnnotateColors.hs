@@ -8,6 +8,7 @@ import Data.Maybe (fromMaybe, catMaybes)
 import Data.List as L
 import qualified Data.Text as T
 import qualified Data.Map.Strict as M
+import qualified Data.HashMap.Strict as HM
 import qualified Data.Text.Lazy as TL
 import Data.Attoparsec.Text as AT
 import Replace.Attoparsec.Text
@@ -22,7 +23,8 @@ import FindColors
 
 -- | Annotate color words in text, using HTML
 annotate :: ColorMap -> [ColorOrNot] -> T.Text
-annotate colorMapMap results = T.concat $ Prelude.map processBlock results where
+annotate colorMapObj results = T.concat $ Prelude.map processBlock results where
+  colorMap = HM.fromList $ mapAssoc colorMapObj
   processBlock :: ColorOrNot -> T.Text
   processBlock block = case block of
     Left txt -> txt
@@ -32,9 +34,8 @@ annotate colorMapMap results = T.concat $ Prelude.map processBlock results where
     Right (textFormat, stdFormat) ->
       -- Lowercase it first.
       let stdFormatLower = T.toLower stdFormat in
-        case colorMapMap M.!? stdFormatLower of
-          Nothing -> T.concat ["CANTFIND", stdFormat]
-          Just hex -> TL.toStrict $ makeSpan textFormat hex
+        TL.toStrict $ makeSpan textFormat $ HM.lookupDefault (T.concat ["CANTFIND", stdFormat]) stdFormatLower colorMap
+
 
 
 -- | Takes the parser output and makes spans
@@ -65,10 +66,10 @@ getZipData (locs, parsed) = case parsed of
   Left _ -> Nothing
   Right (txtFormat, stdFormat) -> Just (locs, txtFormat, stdFormat)
 
-makeStats :: TextName -> ColorMapName -> M.Map ColorWord [Span] -> ColorMap -> TextColorStats
-makeStats fileName mapName locs colorMap = TextColorStats { textName = fileName
-                                                          , colorMapName = mapName
-                                                          , statsList = stats } where
+makeStats :: TextName -> M.Map ColorWord [Span] -> ColorMap -> TextColorStats
+makeStats fileName locs colorMap = TextColorStats { textName = fileName
+                                                  , colorMapName = mapName colorMap
+                                                  , statsList = stats } where
   -- TODO: add more sort functions than just luminance.
   stats = sortColors luminance $ Prelude.map makeStat (M.toList locs)
   makeStat (colorWord, spans) = ColorStat { colorWord = colorWord
@@ -76,7 +77,7 @@ makeStats fileName mapName locs colorMap = TextColorStats { textName = fileName
                                           , parent = categorizeColor hex colorMap
                                           , nMatches = toEnum (length spans) :: Double
                                           , locations = spans}  where
-    hex = fromMaybe "UNDEFINED" (colorMap M.!? colorWord)
+    hex = HM.lookupDefault "UNDEFINED" colorWord (HM.fromList (mapAssoc colorMap))
 
 -- | Utility to convert a list [("a", 2), ("a", 3), ("b", 2)] to a Map
 -- like [("a", [2, 3]), "b", [2])]

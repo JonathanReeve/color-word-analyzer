@@ -21,6 +21,7 @@ import System.FilePath ((</>), takeBaseName)
 
 import qualified Clay as C
 import qualified Data.Map as M
+import qualified Data.HashMap.Strict as HM
 import Lucid
 
 import qualified Data.Text as T
@@ -74,8 +75,8 @@ uploadForm =
   label_ [for_ "colorMapSelector"] "Choose a word-to-color mapping."
   div_ [ class_ "form-group" ] $
     select_ [id_ "colorMapSelector", name_ "colorMap", class_ "form-select" ] $
-    forM_ CM.colorMaps (\colorMap -> option_ [value_ (CM.name colorMap)]
-                      (toHtml (CM.name colorMap)))
+    forM_ CM.colorMaps (\colorMap -> option_ [value_ (mapName colorMap)]
+                      (toHtml (mapName colorMap)))
   label_ [ for_ "fileSelector" ] "Choose a file to upload."
   input_ [ class_ "form-input", type_ "file",
             name_ "uploadedFile", id_ "fileSelector" ]
@@ -110,21 +111,20 @@ doAnalysis :: T.Text ->
              -- ^ Input file
              String ->
              -- ^ Input file label
-             [(Types.ColorWord, Types.Hex)] ->
+             ColorMap ->
              -- ^ Color mapping
-             T.Text ->
-             -- ^ Color mapping label
              Html ()
              -- ^ Resulting HTML
-doAnalysis inFile label colorMap colorMapLabel = do
-  let colorMapMap = M.fromList colorMap
-      parsed = findReplace (colorParser colorMap) inFile
+doAnalysis inFile label colorMap = do
+  let colorMapAssoc = mapAssoc colorMap
+      parsed = findReplace (colorParser colorMapAssoc) inFile
       zipData = map getZipData (zip (getLocations parsed) parsed)
       onlyMatches = catMaybes zipData
-      stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
+      colorMapLabel = mapName colorMap
+      stats = makeStats (T.pack label) (listToMap onlyMatches) colorMap
       textLength = T.length inFile
       adjustedByLength = adjustStatsByLength stats textLength
-  mkHtml colorMapMap [adjustedByLength] parsed textLength
+  mkHtml colorMap [adjustedByLength] parsed textLength
 
 -- adjustStatsByLength :: (TextName, ColorMapName, [(ColorWord, Hex, Parent, Int, [Span])]) ->
 --                       Int ->
@@ -149,18 +149,15 @@ mkTraces :: T.Text ->
              -- ^ Input file
              String ->
              -- ^ Input file label
-             [(Types.ColorWord, Types.Hex)] ->
+             ColorMap ->
              -- ^ Color mapping
-             T.Text ->
-             -- ^ Color mapping label
              [Trace]
              -- ^ Resulting HTML
-mkTraces inFile label colorMap colorMapLabel = do
-  let colorMapMap = M.fromList colorMap
-      parsed = findReplace (colorParser colorMap) inFile
+mkTraces inFile label colorMap = do
+  let parsed = findReplace (colorParser (mapAssoc colorMap)) inFile
       zipData = map getZipData (zip (getLocations parsed) parsed)
       onlyMatches = catMaybes zipData
-      stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
+      stats = makeStats (T.pack label) (listToMap onlyMatches) colorMap
       textLength = T.length inFile
       adjustedByLength = adjustStatsByLength stats textLength
   mkHBarTraces [adjustedByLength] -- ++ (mkHBarParentTraces colorMapMap [stats])
@@ -168,21 +165,19 @@ mkTraces inFile label colorMap colorMapLabel = do
 
 -- | Only make the first chart, and don't scaffold
 mkStats :: T.Text ->
-             -- ^ Input file
-             String ->
-             -- ^ Input file label
-             [(Types.ColorWord, Types.Hex)] ->
-             -- ^ Color mapping
-             T.Text ->
-             -- ^ Color mapping label
-             [TextColorStats]
-             -- ^ Resulting HTML
-mkStats inFile label colorMap colorMapLabel = do
-  let colorMapMap = M.fromList colorMap
-      parsed = findReplace (colorParser colorMap) inFile
+          -- ^ Input file contents
+          String ->
+          -- ^ Input file label
+          ColorMap ->
+          -- ^ Color mapping
+          [TextColorStats]
+          -- ^ Resulting HTML
+mkStats inFile label colorMap = do
+  let colorMapMap = HM.fromList $ mapAssoc colorMap
+      parsed = findReplace (colorParser (mapAssoc colorMap)) inFile
       zipData = map getZipData (zip (getLocations parsed) parsed)
       onlyMatches = catMaybes zipData
-      stats = makeStats (T.pack label) colorMapLabel (listToMap onlyMatches) colorMapMap
+      stats = makeStats (T.pack label) (listToMap onlyMatches) colorMap
       textLength = T.length inFile
       adjustedByLength = adjustStatsByLength stats textLength
   return adjustedByLength
@@ -221,7 +216,7 @@ main = do
       -- write the files to disk, so they will be served by the static middleware
       let (_, fn, fc) = fs'
       -- liftIO $ B.writeFile ("uploads" </> fn) fc
-      colorMap <- liftIO $ CM.assoc $ CM.getColorMap cm
+      let colorMap = CM.getColorMap cm
       let contents = readInfile $ B.toStrict fc
       let label = takeBaseName fn
-      html $ renderText $ doAnalysis contents label colorMap (CM.name (CM.getColorMap cm))
+      html $ renderText $ doAnalysis contents label colorMap

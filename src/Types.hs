@@ -16,13 +16,12 @@ type Unmatched = T.Text
 type ColorFound = T.Text
 type ColorStandardized = T.Text
 
-type ColorMap = M.Map ColorWord Hex
 type ColorWord = T.Text
 type Hex = T.Text
 type Parent = T.Text -- Category
 
 type TextName = T.Text
-type ColorMapName = T.Text
+-- type ColorMapName = T.Text
 
 data TextColorStats = TextColorStats { textName :: T.Text
                                      , colorMapName :: T.Text
@@ -35,3 +34,10 @@ data ColorStat = ColorStat { colorWord :: T.Text
                            , nMatches :: Double
                            , locations :: [Span]
                            } deriving (Generic, ToJSON, FromJSON)
+
+data ColorMap = ColorMap { mapName :: T.Text
+                         , mapAssoc :: [(ColorWord, Hex)]
+                         }
+
+instance Show ColorMap where
+  show cm = show $ mapName cm
