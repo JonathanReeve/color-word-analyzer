@@ -20,7 +20,7 @@ build-type:          Simple
 
 executable color-word-analyzer-cli
   main-is:           CLI.hs
-  ghc-options:       -threaded -static -main-is CLI +RTS -N
+  ghc-options:       -threaded -with-rtsopts=-N -main-is CLI -feager-blackholing -static -staticlib
   other-modules:     AnnotateColors
                    , CategorizeColor
                    , ColorMaps
@@ -45,6 +45,7 @@ executable color-word-analyzer-cli
                      , filepath
                      , http-types
                      , lucid
+		     , lens
                      , microlens
                      , plotlyhs
                      , replace-attoparsec
