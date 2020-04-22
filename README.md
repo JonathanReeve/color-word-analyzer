@@ -1,13 +1,27 @@
 # Color Word Analyzer
 
-This is web app for analyzing color words in a text. Watch it in action at http://colors.jonreeve.com.
+This is web app and CLI for analyzing color words in a text. Watch it in action at http://colors.jonreeve.com. Still highly experimental, and not currently ready for public use.
 
-## Running
+## Running the Project Gutenberg Analysis
 
-Install Nix, then: 
+(Requires pg-text-7.db, from corpus-db.) 
+
+1. Install Nix, if you don't have it already, with: 
+
+```sh
+curl https://nixos.org/nix/install | sh
+```
+
+2. Compile the CLI, with: 
 
 ``` sh
-nix-shell --run "cabal run"
+nix-shell --run "cabal build"
+```
+
+3. Run the python script, with: 
+
+```sh
+python3 pg-analysis.py
 ```
 
 ## Technical details

@@ -20,7 +20,7 @@ build-type:          Simple
 
 executable color-word-analyzer-cli
   main-is:           CLI.hs
-  ghc-options:       -threaded -with-rtsopts=-N -main-is CLI -feager-blackholing -static -staticlib
+  ghc-options:       -threaded -with-rtsopts=-N -main-is CLI -feager-blackholing -static
   other-modules:     AnnotateColors
                    , CategorizeColor
                    , ColorMaps
