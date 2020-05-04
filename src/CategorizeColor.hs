@@ -30,7 +30,9 @@ categorizeColor color colorMap = argMin deltas where
   argMin xs = fst $ minimumBy (comparing snd) xs
 
 readColor :: Hex -> Colour Double
-readColor hex = fst $ head $ sRGB24reads $ T.unpack hex
+readColor hex = case sRGB24reads (T.unpack hex) of
+  [] -> error ("Can't read color " ++ (T.unpack hex))
+  otherwise -> fst $ head $ sRGB24reads (T.unpack hex)
 
 -- Given two colors in CIELAB color space, \( {L^*_1},{a^*_1},{b^*_1}) \)
 -- and \( {L^*_2},{a^*_2},{b^*_2} \), the CIE76 color difference formula is defined as:

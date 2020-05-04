@@ -21,6 +21,7 @@ import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as TL
 import Data.Maybe
 import Lucid
+import Data.Hashable
 
 import Graphics.Plotly.Lucid
 import Graphics.Plotly
@@ -36,11 +37,13 @@ import qualified Main
 import Data.Xkcd
 import Data.Ridgway
 import Data.Master
+import Data.Pantone
 
 getColorMapEither cm = case cm of
   "XKCD" -> Right Data.Xkcd.xkcd
   "Ridgway" -> Right Data.Ridgway.ridgway
-  "Master" -> Right Data.Ridgway.ridgway
+  "Master" -> Right Data.Master.master
+  "Pantone" -> Right Data.Pantone.pantone
   _ -> Left "Invalid color map name"
 
 -- | CLI to annotate colors in text.
@@ -60,15 +63,19 @@ main = defaultMain $ do
       putStrLn $ "and analyzing files: " ++ show (toParam files)
       let cm = fromJust $ toParam colorMap
       let filesList = toParam files
-      if toParam statsOnly then do
-        allStats <- mapM (justStats cm) filesList
-        let json = toJSON allStats
-        BL.putStr $ encode json
+      if toParam statsOnly then analyzeTextsToJSON cm filesList
       else
         if length filesList == 1 then
           analyzeSingleText cm (head filesList)
-        else
+        else do
           analyzeMultipleTexts cm filesList
+          analyzeTextsToJSON cm filesList
+
+analyzeTextsToJSON colorMap filesList = do
+  allStats <- mapM (justStats colorMap) filesList
+  let json = toJSON allStats
+  let outFileName = show (hash json) ++ ".json"
+  BL.writeFile outFileName $ encode json
 
 analyzeMultipleTexts colorMap filesList = do
   traces <- mapM (analyze colorMap) filesList

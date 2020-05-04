@@ -956,4 +956,4 @@ xkcd = ColorMap { mapName = "XKCD",
   ("green","#15b01a"),
   ("purple","#7e1e9c")
     ]
-} 
+}

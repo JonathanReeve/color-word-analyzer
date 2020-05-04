@@ -1,11 +1,10 @@
--- import Main
 
 module FindColors where
 
 import qualified Data.Text as T
 import Data.Attoparsec.Text as AT
-import Replace.Attoparsec.Text
-import Control.Applicative ((<|>), empty)
+-- import Replace.Attoparsec.Text
+import Control.Applicative ((<|>))
 import Data.Char (isPunctuation)
 
 import Types
@@ -23,6 +22,7 @@ wordListParser (w:ws) = do  -- Multi-word case
   c <- wordListParser ws          -- and more words
   -- Parse to space-separated.
   return (a `T.append` T.singleton ' ' `T.append` c) -- singleton :: Char -> Text
+wordListParser [] = asciiCI T.empty
 
 -- | Parse word boundaries.
 wordBoundary :: Parser Char
@@ -32,13 +32,15 @@ wordBoundary = space <|> satisfy isPunctuation
 -- on either side.
 withBoundaries :: Parser T.Text -> Parser T.Text
 withBoundaries word = do
-  wordBoundary
+  _ <- wordBoundary
   w <- word
-  wordBoundary
+  _ <- wordBoundary
   return w
 
 -- | Make one big parser out of our color map, and the expressions
 -- generated from wordListParser.
 colorParser :: [(ColorWord, Hex)] -> Parser T.Text
 colorParser colorMap = choice $ map withBoundaries parsers where
-  parsers = map (wordListParser . T.words . fst) colorMap
+  colorMapWords = map (T.words . fst) colorMap
+  colorMapFiltered = filter (/= []) colorMapWords
+  parsers = map wordListParser colorMapFiltered

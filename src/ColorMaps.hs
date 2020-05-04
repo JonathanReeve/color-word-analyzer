@@ -1,21 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ColorMaps where
-
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.IO as TIO
-import Data.List (sortBy)
-import Data.Function (on)
-import qualified Data.Map.Strict as M
 import qualified Data.HashMap.Strict as HM
-
 import Data.Ridgway
 import Data.Xkcd
 import Data.Master
+import Data.Jaffer
+import Data.Pantone
 
-import CategorizeColor (baseColors)
-
+import CategorizeColor
 import Types
 
 -- | Take a color map containing things like ("nile blue", "#4E5180")
@@ -41,10 +34,22 @@ import Types
 --                                }
 
 xkcd = Data.Xkcd.xkcd
-colorMaps = [Data.Xkcd.xkcd, Data.Ridgway.ridgway, Data.Master.master]
+colorMaps = [ Data.Xkcd.xkcd
+            , Data.Ridgway.ridgway
+            , Data.Master.master
+            , Data.Jaffer.jaffer
+            , Data.Pantone.pantone
+            ]
 
 getColorMap cm = case cm of
   "XKCD" -> Data.Xkcd.xkcd
   "Ridgway" -> Data.Ridgway.ridgway
   "Master" -> Data.Master.master
+  "Jaffer" -> Data.Jaffer.jaffer
+  "Pantone" -> Data.Pantone.pantone
   -- "RidgwayExtendedXKCD" -> ridgwayExtendedXkcd
+
+-- Make a hash map of color words and their parents,
+-- so that we can speed up the categorization process.
+categoryMap :: ColorMap -> HM.HashMap ColorWord Parent
+categoryMap cm = HM.fromList [ (fst pair, categorizeColor (snd pair) cm) | pair <- mapAssoc cm ]

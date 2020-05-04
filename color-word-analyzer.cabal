@@ -20,7 +20,12 @@ build-type:          Simple
 
 executable color-word-analyzer-cli
   main-is:           CLI.hs
-  ghc-options:       -threaded -with-rtsopts=-N -main-is CLI -feager-blackholing -static
+  ghc-options:       -O2
+                     -threaded
+                     "-with-rtsopts=-N -s -K200M"
+                     -main-is CLI
+                     -- -prof
+                     -- -fprof-auto
   other-modules:     AnnotateColors
                    , CategorizeColor
                    , ColorMaps
@@ -31,6 +36,8 @@ executable color-word-analyzer-cli
                    , Data.Ridgway
                    , Data.Xkcd
                    , Data.Master
+                   , Data.Jaffer
+                   , Data.Pantone
   build-depends:       base
                      , Color
                      , Frames
@@ -45,9 +52,10 @@ executable color-word-analyzer-cli
                      , filepath
                      , http-types
                      , lucid
-		     , lens
+                     , hashable
                      , microlens
                      , plotlyhs
+                     , regex-tdfa
                      , replace-attoparsec
                      , scotty
                      , statistics
