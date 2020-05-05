@@ -7,7 +7,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 import Data.List (sortBy, sortOn, minimumBy)
 import Data.Ord (comparing)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, fromJust)
 import Data.Bifunctor (second)
 import Data.Colour.SRGB
 import Data.Colour.CIE (luminance, cieLABView)
@@ -32,7 +32,7 @@ categorizeColor color colorMap = argMin deltas where
 readColor :: Hex -> Colour Double
 readColor hex = case sRGB24reads (T.unpack hex) of
   [] -> error ("Can't read color " ++ (T.unpack hex))
-  otherwise -> fst $ head $ sRGB24reads (T.unpack hex)
+  _ -> fst $ head $ sRGB24reads (T.unpack hex)
 
 -- Given two colors in CIELAB color space, \( {L^*_1},{a^*_1},{b^*_1}) \)
 -- and \( {L^*_2},{a^*_2},{b^*_2} \), the CIE76 color difference formula is defined as:
@@ -52,4 +52,4 @@ baseColors = ["black", "white", "grey", "red", "orange", "yellow", "green", "blu
 --   sortFunction (_, hex, _, _, _) = selectionFunction $ readColor hex
 
 sortColors :: (Colour Double -> Double) -> [ColorStat] -> [ColorStat]
-sortColors selectionFunction = sortOn (selectionFunction . readColor . hex)
+sortColors selectionFunction = sortOn (selectionFunction . readColor . fromJust . hex)

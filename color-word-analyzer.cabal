@@ -15,17 +15,12 @@ category:            Text
 stability:           experimental
 homepage:            https://github.com/JonathanReeve/color-word-analyzer 
 build-type:          Simple
--- extra-source-files:  CHANGELOG.md
--- data-dir:            data/
 
 executable color-word-analyzer-cli
   main-is:           CLI.hs
-  ghc-options:       -O2
-                     -threaded
-                     "-with-rtsopts=-N -s -K200M"
+  ghc-options:       -O2 -threaded "-with-rtsopts=-N"
                      -main-is CLI
-                     -- -prof
-                     -- -fprof-auto
+                     -fprof-auto -fprof-cafs "-with-rtsopts= -s -p"
   other-modules:     AnnotateColors
                    , CategorizeColor
                    , ColorMaps

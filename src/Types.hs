@@ -29,8 +29,8 @@ data TextColorStats = TextColorStats { textName :: T.Text
                                      } deriving (Generic, ToJSON, FromJSON)
 
 data ColorStat = ColorStat { colorWord :: T.Text
-                           , hex :: T.Text
-                           , parent :: T.Text
+                           , hex :: Maybe T.Text
+                           , parent :: Maybe T.Text
                            , nMatches :: Double
                            , locations :: [Span]
                            } deriving (Generic, ToJSON, FromJSON)

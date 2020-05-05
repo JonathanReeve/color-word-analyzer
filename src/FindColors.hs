@@ -5,7 +5,7 @@ import qualified Data.Text as T
 import Data.Attoparsec.Text as AT
 -- import Replace.Attoparsec.Text
 import Control.Applicative ((<|>))
-import Data.Char (isPunctuation)
+import Data.Char (isSpace, isPunctuation)
 
 import Types
 
@@ -25,17 +25,20 @@ wordListParser (w:ws) = do  -- Multi-word case
 wordListParser [] = asciiCI T.empty
 
 -- | Parse word boundaries.
-wordBoundary :: Parser Char
-wordBoundary = space <|> satisfy isPunctuation
+-- This reads really well, but is disabled because it was too slow.
+-- wordBoundary :: Parser Char
+-- wordBoundary = space <|> satisfy isPunctuation
+
+-- wordBoundary :: Parser ()
+-- wordBoundary = skipWhile (\c -> c `elem` " \n\t\r!@#$%^&*()-=_+[]{}|:;'\"<«»–—?.,")
+
+wordBoundary :: Parser ()
+wordBoundary = skipSpace <|> skipWhile isPunctuation
 
 -- | Don't just parse the word, parse it with word boundaries
 -- on either side.
 withBoundaries :: Parser T.Text -> Parser T.Text
-withBoundaries word = do
-  _ <- wordBoundary
-  w <- word
-  _ <- wordBoundary
-  return w
+withBoundaries word = wordBoundary *> word <* wordBoundary
 
 -- | Make one big parser out of our color map, and the expressions
 -- generated from wordListParser.

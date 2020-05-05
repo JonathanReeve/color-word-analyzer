@@ -38,12 +38,15 @@ import Data.Xkcd
 import Data.Ridgway
 import Data.Master
 import Data.Pantone
+import Data.Jaffer
 
 getColorMapEither cm = case cm of
   "XKCD" -> Right Data.Xkcd.xkcd
   "Ridgway" -> Right Data.Ridgway.ridgway
   "Master" -> Right Data.Master.master
   "Pantone" -> Right Data.Pantone.pantone
+  "Jaffer" -> Right Data.Jaffer.jaffer
+  "JafferXkcd" -> Right CM.jafferXkcd
   _ -> Left "Invalid color map name"
 
 -- | CLI to annotate colors in text.

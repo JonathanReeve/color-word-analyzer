@@ -43,10 +43,11 @@ mkHBarParentTraces colorMap = Prelude.concatMap makeTraces where
   makeTraces stats = map (makeTrace textName') colorData' where
     textName' = T.concat [textName stats, "-categories"]
     colorData' = map parentToColor (statsList stats)
+    lookupTable = HM.fromList (mapAssoc colorMap)
     parentToColor :: ColorStat -> ColorStat
     parentToColor colorData = ColorStat { colorWord = parent colorData
-                                        , hex = HM.fromList (mapAssoc colorMap) HM.! parent colorData
-                                        , parent = "NAN"
+                                        , hex = HM.lookup (parent colorData) lookupTable
+                                        , parent = Just "NAN"
                                         , nMatches = nMatches colorData
                                         , locations = locations colorData
                                         }

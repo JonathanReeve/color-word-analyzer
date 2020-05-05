@@ -7,6 +7,7 @@ import Data.Xkcd
 import Data.Master
 import Data.Jaffer
 import Data.Pantone
+import Data.List
 
 import CategorizeColor
 import Types
@@ -34,11 +35,18 @@ import Types
 --                                }
 
 xkcd = Data.Xkcd.xkcd
+
+jafferXkcd :: ColorMap
+jafferXkcd = ColorMap { mapName = "Jaffer+XKCD"
+                      , mapAssoc = mapAssoc Data.Jaffer.jaffer ++ mapAssoc Data.Xkcd.xkcd
+                      }
+
 colorMaps = [ Data.Xkcd.xkcd
             , Data.Ridgway.ridgway
             , Data.Master.master
             , Data.Jaffer.jaffer
             , Data.Pantone.pantone
+            , jafferXkcd
             ]
 
 getColorMap cm = case cm of
@@ -47,6 +55,7 @@ getColorMap cm = case cm of
   "Master" -> Data.Master.master
   "Jaffer" -> Data.Jaffer.jaffer
   "Pantone" -> Data.Pantone.pantone
+  "JafferXkcd" -> jafferXkcd
   -- "RidgwayExtendedXKCD" -> ridgwayExtendedXkcd
 
 -- Make a hash map of color words and their parents,

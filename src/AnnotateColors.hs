@@ -72,15 +72,19 @@ makeStats fileName locs colorMap = TextColorStats { textName = fileName
                                                   , colorMapName = mapName colorMap
                                                   , statsList = stats } where
   -- TODO: add more sort functions than just luminance.
-  stats = sortColors luminance $ Prelude.map makeStat (M.toList locs)
+  stats = sortColors luminance $ mapMaybe makeStat (M.toList locs)
   parentMap = ColorMaps.categoryMap colorMap
-  makeStat (colorWord, spans) = ColorStat { colorWord = colorWord
-                                          , hex = hex
-                                          , parent = parent
-                                          , nMatches = toEnum (length spans) :: Double
-                                          , locations = spans}  where
-    hex = HM.lookupDefault "UNDEFINED" colorWord (HM.fromList (mapAssoc colorMap))
-    parent = parentMap HM.! colorWord
+  makeStat (colorWord, spans) = let
+    hex = HM.lookup colorWord (HM.fromList (mapAssoc colorMap))
+    parent = HM.lookup colorWord parentMap
+    in
+      if isJust hex && isJust parent
+      then Just ColorStat { colorWord = colorWord
+                          , hex = hex
+                          , parent = parent
+                          , nMatches = toEnum (length spans) :: Double
+                          , locations = spans}
+      else Nothing
 
 -- | Utility to convert a list [("a", 2), ("a", 3), ("b", 2)] to a Map
 -- like [("a", [2, 3]), "b", [2])]
